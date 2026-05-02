@@ -1,0 +1,438 @@
+═══════════════════════════════════════════════════════════════════════════════
+ Windows 11 Hardening Suite v1.0 — Setup & First-Run Guide
+ CIS Benchmark L1 + Microsoft Security Baseline (November 2023)
+═══════════════════════════════════════════════════════════════════════════════
+
+This guide walks you through setting up and running the hardening suite for the
+first time. Expected time: 15–30 minutes (plus 5–10 minutes for the hardening
+script itself).
+
+───────────────────────────────────────────────────────────────────────────────
+PHASE 1: SETUP (5 MINUTES)
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 1.1 — Extract the Suite
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If you received a ZIP file:
+  1. Right-click the ZIP file
+  2. Select "Extract All…"
+  3. Choose a location (Desktop or C:\Tools\ recommended)
+  4. Wait for extraction to complete
+
+You should now have a folder containing these files:
+  ✓ START_HARDENING_SUITE.bat
+  ✓ Harden-Windows11.ps1
+  ✓ Win11-Hardening-Report-Dashboard.html
+  ✓ Windows11_Hardening_Documentation.docx
+  ✓ README.md
+  ✓ SETUP_GUIDE.txt (this file)
+
+If any file is missing, re-download the complete suite.
+
+STEP 1.2 — Verify Your System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before running, verify your system meets the requirements:
+
+✓ Windows 11 Build 22H2 or 23H2?
+  → Open Settings > System > About
+  → Look for "OS build: 22H2" or "23H2"
+
+✓ Administrator rights?
+  → Open Command Prompt (Win+R, type cmd, Enter)
+  → Type: net user
+  → You should see your username listed as an administrator
+
+✓ Microsoft Defender enabled?
+  → Settings > Privacy & Security > Windows Security > Virus & threat protection
+  → Ensure "Manage settings" is available (not greyed out)
+  → Antivirus software should show "Active"
+
+✓ TPM 2.0 present? (for BitLocker, optional but recommended)
+  → Windows+R > tpm.msc > Enter
+  → Look for "TPM version: 2.0"
+  → If not present, BitLocker will still work but less securely
+
+If ANY of these fail:
+  ⚠ STOP. Do not proceed.
+  → Contact your IT support to resolve
+  → Re-run setup after issues are fixed
+
+STEP 1.3 — Backup Your System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Strongly recommended (takes ~15 minutes):
+
+Option A: System Image Backup (Windows Built-in)
+  1. Settings > System > Backup > Backup Options
+  2. Click "Backup now"
+  3. Choose external drive or network location
+  4. Wait for completion
+
+Option B: Cloud Backup (if available)
+  1. OneDrive > Settings > Backup
+  2. Enable "Device backup"
+  3. Or use your cloud backup tool (Google Drive, Dropbox, etc.)
+
+If something goes wrong, you can restore from here.
+
+───────────────────────────────────────────────────────────────────────────────
+PHASE 2: PREVIEW (OPTIONAL, 5 MINUTES)
+───────────────────────────────────────────────────────────────────────────────
+
+Before hardening your machine, take a look at what will happen:
+
+STEP 2.1 — Review the Documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. In your suite folder, double-click:
+     Windows11_Hardening_Documentation.docx
+
+  2. Skim these sections (5–10 min read):
+     • Section 1: Overview (Purpose, benchmarks, prerequisites)
+     • Section 3: Detailed Controls (What gets hardened and why)
+     • Section 5: Post-Hardening Actions (What you'll need to do after)
+
+This gives you context for what the script does.
+
+STEP 2.2 — Preview the Report Dashboard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. In your suite folder, double-click:
+     Win11-Hardening-Report-Dashboard.html
+
+  2. This opens a web page. Click "Load demo data ↗"
+
+  3. You'll see example results:
+     • Summary cards (total controls, compliant %, warnings, failed)
+     • Donut chart (visual breakdown)
+     • Bar chart (results by section)
+     • Control table (searchable, filterable)
+
+This is what your results will look like after hardening.
+
+───────────────────────────────────────────────────────────────────────────────
+PHASE 3: HARDENING (10–20 MINUTES)
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 3.1 — Launch the Suite
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. In your suite folder, right-click:
+     START_HARDENING_SUITE.bat
+
+  2. Select: "Run as Administrator"
+
+  3. A black command window opens with a menu:
+
+     ╔════════════════════════════════════════════════════════════════╗
+     ║          Windows 11 Security Hardening Suite v1.0             ║
+     ║      CIS Benchmark L1 + Microsoft Security Baseline           ║
+     ║                   LLSG Digital Services                       ║
+     ╚════════════════════════════════════════════════════════════════╝
+
+     [1] Run Hardening Script
+     [2] View Report Dashboard
+     [3] View Documentation
+     [4] Open PowerShell ISE for Editing
+     [5] Exit
+
+STEP 3.2 — Run the Hardening Script
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. At the prompt, type: 1
+  2. Press Enter
+
+  3. You'll see a warning screen:
+
+     Warnings:
+       • This script applies 300+ security controls.
+       • Some settings may conflict with existing Group Policy.
+       • It is STRONGLY RECOMMENDED to test in non-production first.
+       • A restart will be required after completion.
+
+  4. If you're ready, type: Y
+  5. Press Enter
+
+  6. The script starts running. You'll see:
+
+     Starting PowerShell…
+
+     ✓ Administrator privileges confirmed
+     === SECTION 1: Account Policies ===
+     ✓ Applied: Password and lockout policy applied via net accounts
+     ✓ Disabled: Guest account disabled
+     …
+     [continues for ~5–10 minutes]
+
+  7. When complete, you'll see:
+
+     === GENERATING SUMMARY REPORT ===
+
+     ✓ Hardening complete. PLEASE RESTART.
+
+  8. Press any key to return to the menu.
+
+STEP 3.3 — Save the Log Files
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  The script creates two files in C:\ (root of C: drive):
+
+  C:\HardeningLog_20260502_143015.txt  ← Text log (human-readable)
+  C:\HardeningLog_20260502_143015.csv  ← CSV results (for dashboard)
+
+  Timestamp will be different (today's date/time).
+
+  ⚠ Keep these files! You'll need the CSV for the report dashboard.
+
+  Optional: Copy them to a shared network location or cloud storage for auditing.
+
+STEP 3.4 — Restart Your Machine
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Restart is REQUIRED. Settings like LSA Protection, SEHOP, and Credential Guard
+  don't activate until reboot.
+
+  Choose your preference:
+
+  Option A: Restart immediately
+    → Click the START_HARDENING_SUITE.bat window
+    → Close it (X button)
+    → Windows+I > Power > Restart now
+
+  Option B: Restart later
+    → Close the window
+    → Save your work
+    → Schedule a restart during lunch or after-hours
+    → Windows+I > Power > Restart now (when ready)
+
+───────────────────────────────────────────────────────────────────────────────
+PHASE 4: VERIFICATION (5–10 MINUTES AFTER RESTART)
+───────────────────────────────────────────────────────────────────────────────
+
+After your machine restarts, verify the hardening worked:
+
+STEP 4.1 — Check a Few Key Settings
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Windows+R > powershell > Enter (regular PowerShell, not ISE)
+
+  2. Paste each line below, one at a time, and press Enter:
+
+  Check 1 — LSA Protection (RunAsPPL)
+    (Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa).RunAsPPL
+  Expected output: 1  ✓
+
+  Check 2 — NTLM level (NTLMv2 only)
+    (Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa).LmCompatibilityLevel
+  Expected output: 5  ✓
+
+  Check 3 — SMBv1 disabled
+    Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol | Select State
+  Expected output: Disabled  ✓
+
+  Check 4 — Firewall enabled
+    Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction
+  Expected output:
+    Name: Domain, Public, Private
+    Enabled: True (all three)
+    DefaultInboundAction: Block (all three)  ✓
+
+  If ALL checks show expected output → ✓ Hardening successful!
+  If ANY check fails → ⚠ See Troubleshooting section in README.md
+
+STEP 4.2 — Enable BitLocker (RECOMMENDED)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  BitLocker encrypts your entire drive. The script doesn't enable it
+  automatically because you need to save the recovery key somewhere safe.
+
+  1. In PowerShell (as Administrator):
+     manage-bde -on C: -SkipHardwareTest
+
+  2. Save the recovery key:
+     manage-bde -protectors -adbackup C:  [if domain-joined]
+     OR manually save it to a USB drive or password manager
+
+  3. Check status:
+     manage-bde -status C:
+  Expected: "Protection Status: Protection On"  ✓
+
+STEP 4.3 — View Your Hardening Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Run START_HARDENING_SUITE.bat again
+
+  2. Select [2] View Report Dashboard
+
+  3. The dashboard opens in your browser
+
+  4. Click "Upload CSV"
+
+  5. Navigate to C:\ and select:
+     HardeningLog_20250502_143015.csv
+     (timestamp will be your date/time)
+
+  6. View your results:
+     • Summary cards show total controls and compliance %
+     • Donut chart shows pass/warn/fail split
+     • Bar chart shows results by section
+     • Control table lets you search and filter
+
+  7. Screenshot or export for records (right-click > Print > Save as PDF)
+
+───────────────────────────────────────────────────────────────────────────────
+PHASE 5: POST-HARDENING ACTIONS (AS NEEDED)
+───────────────────────────────────────────────────────────────────────────────
+
+Some optional post-hardening tasks:
+
+STEP 5.1 — Enable Windows Hello (MFA Alternative)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Adds biometric or PIN authentication:
+
+  1. Settings > Accounts > Sign-in options
+  2. Scroll to "Windows Hello"
+  3. Click "Set up" for:
+     • Facial recognition (if webcam available)
+     • Fingerprint (if scanner available)
+     • PIN (always available)
+  4. Follow on-screen prompts
+  5. Test: Lock screen (Win+L) and unlock with new method
+
+STEP 5.2 — Document Exceptions (If Any)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  If the hardening broke any legacy applications:
+
+  1. Keep a list:
+     • Application name
+     • What broke (e.g., can't connect to legacy SMB server)
+     • Workaround (e.g., re-enable SMB signing just for that server)
+     • Risk acceptance (document in your IT governance system)
+
+  2. Make fixes granular (don't just disable all security)
+
+STEP 5.3 — Re-run Periodically
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  It's safe to re-run the script monthly or quarterly:
+
+  1. Run START_HARDENING_SUITE.bat again
+  2. Select [1] Run Hardening Script
+  3. Confirm with Y
+  4. Let it run (idempotent, won't break anything)
+  5. Restart
+  6. Upload the new CSV to dashboard to track compliance over time
+
+───────────────────────────────────────────────────────────────────────────────
+QUICK REFERENCE — WHAT JUST HAPPENED
+───────────────────────────────────────────────────────────────────────────────
+
+The hardening script applied:
+
+✓ Account Security
+  → 14-character minimum password
+  → Password expiry: 60 days
+  → Account lockout after 5 failed attempts
+  → Guest account disabled
+  → Administrator account renamed
+
+✓ Malware Prevention
+  → Windows Defender real-time protection enabled
+  → 15 Attack Surface Reduction rules (prevent ransomware, macros, etc.)
+  → Network Protection enabled
+  → Controlled Folder Access (ransomware blocker)
+
+✓ Network Security
+  → Windows Firewall enabled on all 3 profiles
+  → Block-inbound policy (only allow specific services)
+  → NetBIOS disabled (legacy protocol attack surface)
+  → SMB signing required (prevent tampering)
+  → NTLMv2 only (blocks weak NTLMv1)
+
+✓ Audit & Logging
+  → 20 audit policy subcategories enabled
+  → Command-line logging (detects attacks in real-time)
+  → Event log sizes increased to 32–196 MB
+
+✓ Credential Protection
+  → LSA Protection (prevents credential theft from memory)
+  → Credential Guard enabled (virtualizes LSASS)
+  → WDigest disabled (no plaintext passwords in memory)
+
+✓ Service Hardening
+  → 23 unnecessary services disabled (RDP, UPnP, SSDP, etc.)
+  → Reduces attack surface & resource usage
+
+✓ PowerShell Hardening
+  → Script block logging (detects PowerShell attacks)
+  → Module logging
+  → Execution policy: RemoteSigned (blocks unsigned remote scripts)
+
+✓ OS Hardening
+  → Telemetry disabled
+  → LLMNR disabled (DNS poisoning prevention)
+  → DoH (DNS over HTTPS) enabled
+  → SEHOP enabled (memory corruption protection)
+  → UAC enabled at highest level
+
+───────────────────────────────────────────────────────────────────────────────
+TROUBLESHOOTING
+───────────────────────────────────────────────────────────────────────────────
+
+Problem: "Administrator privileges required"
+  → Right-click START_HARDENING_SUITE.bat
+  → Select "Run as Administrator"
+  → Click "Yes" when prompted
+
+Problem: "PowerShell script not found"
+  → Ensure Harden-Windows11.ps1 is in the same folder as the .bat
+  → Don't move or rename files
+
+Problem: Script hangs or doesn't complete
+  → Wait 5–10 minutes (it's processing 300+ controls)
+  → If still hanging after 15 min, close PowerShell window
+  → Check C:\HardeningLog_*.txt for where it stopped
+  → Contact IT support with the log
+
+Problem: BitLocker warning after hardening
+  → This is expected if TPM wasn't detected
+  → You can still enable it manually: manage-bde -on C: -SkipHardwareTest
+  → Contact IT to enable TPM in BIOS if desired
+
+Problem: Old application doesn't work after hardening
+  → Check the documentation (Windows11_Hardening_Documentation.docx)
+  → Section 6: "Known Exceptions & Risk Acceptances"
+  → Document the issue and contact IT to determine if re-enabling is necessary
+  → Do NOT blindly disable all security
+
+Problem: Report dashboard won't open CSV
+  → Ensure the CSV file is from C:\HardeningLog_*.csv
+  → Try using "Demo data ↗" first to test dashboard functionality
+  → If demo works but your CSV doesn't, the file may be corrupted
+  → Re-run hardening to generate a new CSV
+
+───────────────────────────────────────────────────────────────────────────────
+NEXT STEPS
+───────────────────────────────────────────────────────────────────────────────
+
+✓ Hardening complete? Excellent!
+
+Next:
+  1. Keep the log files (C:\HardeningLog_*.txt and *.csv) for audit trail
+  2. Share the report dashboard with your IT team
+  3. Schedule a restart during maintenance windows if not already done
+  4. Re-run monthly/quarterly to maintain compliance
+  5. Document any exceptions in your IT governance system
+
+Questions? Refer to:
+  • README.md (overview and FAQ)
+  • Windows11_Hardening_Documentation.docx (detailed controls & references)
+  • Your IT support team
+
+═══════════════════════════════════════════════════════════════════════════════
+                              You're done! 🚀
+═══════════════════════════════════════════════════════════════════════════════

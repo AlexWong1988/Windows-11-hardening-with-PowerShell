@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Win11 Hardening Report — Interactive Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#333;background:#f8f8f8;font-size:14px;line-height:1.6}
+@media (prefers-color-scheme: dark) {
+  body{color:#e0e0e0;background:#1a1a1a}
+  input,select,button{background:#2a2a2a;color:#e0e0e0;border-color:#444}
+  .topbar{background:#242424;border-bottom-color:#444}
+  .stat-card{background:#2a2a2a}
+  .chart-card{background:#2a2a2a;border-color:#444}
+  .upload-zone{background:#2a2a2a;border-color:#444}
+  table{border-color:#444}
+  tr:hover td{background:#2a2a2a}
+  th{border-bottom-color:#444}
+}
+
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #ddd;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.topbar-title{font-size:16px;font-weight:600}
+.topbar-sub{font-size:12px;color:#888;margin-top:2px}
+.topbar-right{display:flex;gap:10px;align-items:center}
+
+button{cursor:pointer;background:#fff;border:1px solid #d0d0d0;border-radius:6px;padding:8px 16px;font-size:13px;color:#333;transition:all .15s}
+button:hover{background:#f5f5f5;border-color:#999}
+.btn-primary{background:#0066cc;border-color:#0066cc;color:#fff;font-weight:500}
+.btn-primary:hover{background:#0052a3;border-color:#0052a3}
+.btn-demo{font-size:12px;color:#666;border:none;padding:4px 8px;background:transparent}
+.btn-demo:hover{text-decoration:underline}
+
+.upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px;border:2px dashed #ccc;border-radius:8px;background:#f9f9f9;cursor:pointer;margin:20px}
+.upload-zone:hover{border-color:#0066cc;background:#f0f6ff}
+.upload-icon{width:36px;height:36px;border-radius:50%;background:#e6f0ff;display:flex;align-items:center;justify-content:center}
+.upload-title{font-size:14px;font-weight:600}
+.upload-sub{font-size:12px;color:#888;text-align:center;max-width:400px}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px}
+.stat-card{background:#f5f5f5;border-radius:6px;padding:16px}
+.stat-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;font-weight:600}
+.stat-value{font-size:32px;font-weight:700;line-height:1}
+.stat-sub{font-size:11px;color:#888;margin-top:6px}
+.c-green{color:#2d8659}.c-amber{color:#b88f00}.c-red{color:#cc2222}.c-blue{color:#0066cc}
+
+.charts-row{display:grid;grid-template-columns:240px 1fr;gap:16px;padding:0 20px 20px}
+.chart-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px}
+.chart-title{font-size:11px;font-weight:700;color:#666;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em}
+
+.donut-wrap{position:relative;height:160px}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.donut-pct{font-size:26px;font-weight:700}
+.donut-lbl{font-size:11px;color:#888}
+.legend-row{display:flex;align-items:center;gap:6px;font-size:12px;color:#666;margin-top:6px}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+.bar-wrap{position:relative;height:200px}
+
+.controls{display:flex;gap:10px;padding:0 20px 12px;align-items:center}
+.search{flex:1;border:1px solid #d0d0d0;border-radius:6px;padding:8px 12px;font-size:13px;outline:none}
+.search:focus{border-color:#0066cc;box-shadow:0 0 0 2px rgba(0,102,204,.1)}
+select{border:1px solid #d0d0d0;border-radius:6px;padding:8px 12px;font-size:13px;outline:none;cursor:pointer}
+
+.tab-bar{display:flex;gap:0;padding:0 20px;border-bottom:1px solid #ddd;margin-bottom:0}
+.tab{padding:8px 16px;font-size:13px;border-radius:0;cursor:pointer;color:#666;border:none;background:transparent;border-bottom:2px solid transparent}
+.tab.active{color:#0066cc;border-bottom-color:#0066cc;font-weight:600}
+.tab:hover:not(.active){color:#333}
+
+.table-wrap{padding:0 20px 20px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;font-weight:700;color:#666;padding:10px;border-bottom:1px solid #ddd;text-transform:uppercase;letter-spacing:.04em;background:#fafafa}
+td{padding:10px;border-bottom:1px solid #eee;color:#333}
+tr:hover td{background:#f9f9f9}
+
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px}
+.b-ok{background:#e6f5e6;color:#2d8659}
+.b-warn{background:#fff3cd;color:#856404}
+.b-fail{background:#f8d7da;color:#721c24}
+.b-info{background:#d1ecf1;color:#0c5460}
+
+.empty{text-align:center;color:#888;padding:40px;font-size:13px}
+
+.timestamp{font-size:11px;color:#888;padding:0 20px 16px}
+
+#upload-screen{padding:0}
+#report-screen{display:none}
+
+@media (max-width: 1024px) {
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-row{grid-template-columns:1fr}
+}
+
+@media (max-width: 640px) {
+  .stats-grid{grid-template-columns:1fr}
+  .topbar-right{flex-direction:column;gap:6px}
+  button{width:100%}
+}
+</style>
+</head>
+<body>
+<h2 class="sr-only">Windows 11 hardening script visual report dashboard</h2>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Win11 Hardening Report Dashboard</div>
+    <div class="topbar-sub">CIS Benchmark L1 + Microsoft Security Baseline</div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-demo" onclick="loadDemo()">Demo data ↗</button>
+    <button class="btn-primary" onclick="document.getElementById('csv-input').click()">Upload CSV</button>
+  </div>
+</div>
+
+<div id="upload-screen">
+  <div class="upload-zone" onclick="document.getElementById('csv-input').click()" id="drop-zone">
+    <div class="upload-icon">📊</div>
+    <div class="upload-title">Drop your hardening CSV here</div>
+    <div class="upload-sub">Output from Harden-Windows11.ps1 — file saved as C:\HardeningLog_YYYYMMDD_HHMMSS.csv</div>
+    <button class="btn-primary" onclick="event.stopPropagation();document.getElementById('csv-input').click()" style="margin-top:8px">Browse for CSV file</button>
+    <button class="btn-demo" onclick="event.stopPropagation();loadDemo()">Load example data instead ↗</button>
+  </div>
+  <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this)">
+</div>
+
+<div id="report-screen">
+  <div class="timestamp" id="report-meta"></div>
+  <div class="stats-grid" id="stats-grid"></div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Overall status</div>
+      <div class="donut-wrap"><canvas id="donut-chart"></canvas>
+      <div class="donut-center"><div class="donut-pct" id="pass-pct">—</div><div class="donut-lbl">compliant</div></div></div>
+      <div id="donut-legend"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Results by section</div>
+      <div class="bar-wrap"><canvas id="bar-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="setTab('all',this)">All controls</button>
+    <button class="tab" onclick="setTab('Applied',this)">Applied ✓</button>
+    <button class="tab" onclick="setTab('WARNING',this)">Warnings ⚠</button>
+    <button class="tab" onclick="setTab('FAILED',this)">Failed ✗</button>
+  </div>
+
+  <div class="controls">
+    <input class="search" id="search" placeholder="Search controls…" oninput="renderTable()">
+    <select id="section-filter" onchange="renderTable()"><option value="">All sections</option></select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:110px">Status</th><th style="width:140px">Section</th><th>Control</th><th style="width:35%">Detail</th></tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div class="empty" id="empty-msg" style="display:none">No controls match the current filter.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+let allData = [];
+let activeTab = 'all';
+let donutChart, barChart;
+
+const SECTION_MAP = {
+  'Account':'Account Policies','Password':'Account Policies','Guest':'Account Policies','Administrator':'Account Policies','Lockout':'Account Policies',
+  'Defender':'Defender','ASR':'Defender','Antispyware':'Defender','Controlled Folder':'Defender','Network Protection':'Defender','MAPS':'Defender',
+  'Firewall':'Firewall','NetBIOS':'Firewall',
+  'Audit':'Audit Policy',
+  'User Rights':'User Rights',
+  'LSA':'Credential Security','NTLM':'Credential Security','WDigest':'Credential Security','SMB':'Credential Security',
+  'UAC':'System Hardening','VBS':'System Hardening','HVCI':'System Hardening','Credential Guard':'System Hardening',
+  'RDP':'Remote Access','WinRM':'Remote Access','Remote':'Remote Access',
+  'AutoPlay':'AutoRun','AutoRun':'AutoRun',
+  'Event Log':'Logging','PowerShell':'PowerShell','Transcri':'PowerShell','Module Logging':'PowerShell',
+  'BitLocker':'BitLocker','TPM':'BitLocker',
+  'Service':'Services','SSDP':'Services','UPnP':'Services','Telnet':'Services','FTP':'Services',
+  'Update':'Windows Update',
+  'Telemetry':'OS Hardening','LLMNR':'OS Hardening','DoH':'OS Hardening','SEHOP':'OS Hardening','Safe DLL':'OS Hardening','AlwaysInstall':'OS Hardening','MS Store':'OS Hardening',
+  'IPv':'OS Hardening'
+};
+
+function inferSection(control) {
+  for (const [k, v] of Object.entries(SECTION_MAP)) {
+    if (control.includes(k)) return v;
+  }
+  return 'Other';
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].replace(/\r/g,'').split(',').map(h => h.replace(/"/g,'').trim());
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; continue; }
+      if (ch === ',' && !inQ) { vals.push(cur.trim()); cur = ''; continue; }
+      cur += ch;
+    }
+    vals.push(cur.replace(/\r/g,'').trim());
+    const row = {};
+    headers.forEach((h, i) => row[h] = vals[i] || '');
+    return row;
+  }).filter(r => r.Control || r.Status);
+}
+
+function normaliseRow(row) {
+  const ctrl   = row.Control || '';
+  const status = (row.Status || '').trim();
+  const detail = row.Detail || '';
+  const section = inferSection(ctrl);
+  return { ctrl, status, detail, section };
+}
+
+function statusBadge(s) {
+  if (!s) return `<span class="badge b-info">Unknown</span>`;
+  const su = s.toUpperCase();
+  if (su.includes('APPLIED') || su === 'ACTIVE' || su === 'DISABLED') return `<span class="badge b-ok">✓ ${s}</span>`;
+  if (su.includes('WARN') || su.includes('NOT FOUND')) return `<span class="badge b-warn">⚠ ${s}</span>`;
+  if (su.includes('FAIL') || su.includes('ERROR')) return `<span class="badge b-fail">✗ ${s}</span>`;
+  return `<span class="badge b-info">${s}</span>`;
+}
+
+function bucketStatus(s) {
+  const su = (s||'').toUpperCase();
+  if (su.includes('APPLIED') || su === 'ACTIVE' || su === 'DISABLED') return 'Applied';
+  if (su.includes('WARN') || su.includes('NOT FOUND')) return 'WARNING';
+  if (su.includes('FAIL') || su.includes('ERROR')) return 'FAILED';
+  return 'Other';
+}
+
+function loadData(rows) {
+  allData = rows.map(r => normaliseRow(r)).filter(r => r.ctrl);
+  renderReport();
+}
+
+function renderReport() {
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('report-screen').style.display = 'block';
+
+  const total   = allData.length;
+  const applied = allData.filter(r => bucketStatus(r.status) === 'Applied').length;
+  const warned  = allData.filter(r => bucketStatus(r.status) === 'WARNING').length;
+  const failed  = allData.filter(r => bucketStatus(r.status) === 'FAILED').length;
+  const pct     = total ? Math.round((applied / total) * 100) : 0;
+
+  document.getElementById('report-meta').textContent =
+    `Generated ${new Date().toLocaleString()} — ${total} controls processed`;
+  document.getElementById('pass-pct').textContent = pct + '%';
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total controls</div><div class="stat-value c-blue">${total}</div><div class="stat-sub">processed</div></div>
+    <div class="stat-card"><div class="stat-label">✓ Applied / Active</div><div class="stat-value c-green">${applied}</div><div class="stat-sub">${pct}% compliant</div></div>
+    <div class="stat-card"><div class="stat-label">⚠ Warnings</div><div class="stat-value c-amber">${warned}</div><div class="stat-sub">review needed</div></div>
+    <div class="stat-card"><div class="stat-label">✗ Failed</div><div class="stat-value c-red">${failed}</div><div class="stat-sub">check logs</div></div>
+  `;
+
+  drawDonut(applied, warned, failed, total);
+  drawBar();
+  populateSectionFilter();
+  renderTable();
+}
+
+function drawDonut(applied, warned, failed, total) {
+  const other = total - applied - warned - failed;
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById('donut-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Applied', 'Warning', 'Failed', 'Other'],
+      datasets: [{ data: [applied, warned, failed, other],
+        backgroundColor: ['#2d8659','#b88f00','#cc2222','#aaa'],
+        borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ` ${ctx.label}: ${ctx.raw}`
+      }}}
+    }
+  });
+  const colours = ['#2d8659','#b88f00','#cc2222','#aaa'];
+  const labels  = [`Applied (${applied})`,`Warning (${warned})`,`Failed (${failed})`,`Other (${other})`];
+  document.getElementById('donut-legend').innerHTML = labels.map((l,i) =>
+    `<div class="legend-row"><span class="legend-dot" style="background:${colours[i]}"></span>${l}</div>`
+  ).join('');
+}
+
+function drawBar() {
+  const sectionCounts = {};
+  allData.forEach(r => {
+    if (!sectionCounts[r.section]) sectionCounts[r.section] = {ok:0,warn:0,fail:0};
+    const b = bucketStatus(r.status);
+    if (b === 'Applied') sectionCounts[r.section].ok++;
+    else if (b === 'WARNING') sectionCounts[r.section].warn++;
+    else if (b === 'FAILED') sectionCounts[r.section].fail++;
+  });
+  const labels = Object.keys(sectionCounts).sort();
+  const okData   = labels.map(l => sectionCounts[l].ok);
+  const warnData = labels.map(l => sectionCounts[l].warn);
+  const failData = labels.map(l => sectionCounts[l].fail);
+  const h = Math.max(200, labels.length * 30 + 50);
+  document.querySelector('.bar-wrap').style.height = h + 'px';
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('bar-chart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Applied', data: okData,   backgroundColor: '#2d8659', borderRadius: 3 },
+        { label: 'Warning', data: warnData, backgroundColor: '#b88f00', borderRadius: 3 },
+        { label: 'Failed',  data: failData, backgroundColor: '#cc2222', borderRadius: 3 }
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: true, grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { size: 11 }, precision: 0 } },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function populateSectionFilter() {
+  const sel = document.getElementById('section-filter');
+  const sections = [...new Set(allData.map(r => r.section))].sort();
+  sel.innerHTML = '<option value="">All sections</option>' +
+    sections.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function setTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const q   = (document.getElementById('search').value || '').toLowerCase();
+  const sec = document.getElementById('section-filter').value;
+  let rows = allData.filter(r => {
+    if (activeTab !== 'all') {
+      if (activeTab === 'WARNING' && bucketStatus(r.status) !== 'WARNING') return false;
+      if (activeTab === 'Applied' && bucketStatus(r.status) !== 'Applied') return false;
+      if (activeTab === 'FAILED'  && bucketStatus(r.status) !== 'FAILED')  return false;
+    }
+    if (sec && r.section !== sec) return false;
+    if (q && !r.ctrl.toLowerCase().includes(q) && !r.detail.toLowerCase().includes(q) && !r.section.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const tbody = document.getElementById('table-body');
+  const empty = document.getElementById('empty-msg');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(r => `<tr><td>${statusBadge(r.status)}</td><td style="color:#888;font-size:12px">${r.section}</td><td>${r.ctrl}</td><td style="font-size:12px;color:#666;font-family:monospace">${r.detail}</td></tr>`).join('');
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result);
+    if (rows.length) loadData(rows);
+    else alert('Error parsing CSV — ensure this is from Harden-Windows11.ps1');
+  };
+  reader.readAsText(file);
+}
+
+const DROP = document.getElementById('drop-zone');
+DROP.addEventListener('dragover', e => { e.preventDefault(); DROP.style.borderColor='#0066cc' });
+DROP.addEventListener('dragleave', () => DROP.style.borderColor='');
+DROP.addEventListener('drop', e => {
+  e.preventDefault(); DROP.style.borderColor='';
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => loadData(parseCSV(ev.target.result));
+  reader.readAsText(file);
+});
+
+function loadDemo() {
+  const demo = [
+    {Control:'Account/Password Policy',Status:'Applied',Detail:'net accounts settings applied'},
+    {Control:'Guest Account Disabled',Status:'Applied',Detail:'CIS 2.3.1.2'},
+    {Control:'Enable Defender antispyware',Status:'Applied',Detail:'DisableAntiSpyware = 0'},
+    {Control:'Enable real-time monitoring',Status:'Applied',Detail:'DisableRealtimeMonitoring = 0'},
+    {Control:'Enable Network Protection',Status:'Applied',Detail:'EnableNetworkProtection = 1'},
+    {Control:'ASR Rules (15)',Status:'Applied',Detail:'Enforce mode applied'},
+    {Control:'Controlled Folder Access',Status:'Applied',Detail:'Ransomware protection'},
+    {Control:'Windows Firewall (All Profiles)',Status:'Applied',Detail:'Inbound blocked by default'},
+    {Control:'Disable NetBIOS over TCP/IP',Status:'Applied',Detail:'All adapters'},
+    {Control:'Advanced Audit Policy',Status:'Applied',Detail:'20 subcategories enabled'},
+    {Control:'User Rights Assignment',Status:'Applied',Detail:'secedit configuration'},
+    {Control:'LSA Protection (RunAsPPL)',Status:'Applied',Detail:'RunAsPPL = 1'},
+    {Control:'Restrict anonymous SAM',Status:'Applied',Detail:'RestrictAnonymous = 1'},
+    {Control:'LAN Manager auth NTLMv2 only',Status:'Applied',Detail:'LmCompatibilityLevel = 5'},
+    {Control:'Enable Credential Guard',Status:'Applied',Detail:'LsaCfgFlags = 1'},
+    {Control:'Disable SMBv1',Status:'Applied',Detail:'SMB1 = 0'},
+    {Control:'Require SMB signing',Status:'Applied',Detail:'RequireSecuritySignature = 1'},
+    {Control:'Enable UAC',Status:'Applied',Detail:'EnableLUA = 1'},
+    {Control:'Disable RDP',Status:'Applied',Detail:'fDenyTSConnections = 1'},
+    {Control:'Disable WinRM basic auth',Status:'Applied',Detail:'AllowBasic = 0'},
+    {Control:'Disable AutoRun',Status:'Applied',Detail:'NoDriveTypeAutoRun = 255'},
+    {Control:'Enable VBS',Status:'Applied',Detail:'EnableVirtualizationBasedSecurity = 1'},
+    {Control:'Disable telemetry',Status:'Applied',Detail:'AllowTelemetry = 0'},
+    {Control:'Disable LLMNR',Status:'Applied',Detail:'EnableMulticast = 0'},
+    {Control:'Enable DoH',Status:'Applied',Detail:'EnableAutoDoh = 2'},
+    {Control:'Security log max size',Status:'Applied',Detail:'MaxSize = 196608'},
+    {Control:'Computer Browser',Status:'Not Found/Error',Detail:'Service not found on this system'},
+    {Control:'Remote Registry',Status:'Disabled',Detail:'Service: RemoteRegistry'},
+    {Control:'SSDP Discovery',Status:'Disabled',Detail:'Service: SSDPSRV'},
+    {Control:'UPnP Device Host',Status:'Disabled',Detail:'Service: upnphost'},
+    {Control:'Fax Service',Status:'Not Found/Error',Detail:'Service not found'},
+    {Control:'Windows Mobile Hotspot',Status:'Disabled',Detail:'Service: icssvc'},
+    {Control:'Windows Update policy',Status:'Applied',Detail:'Feature deferral: 180 days'},
+    {Control:'PowerShell script block logging',Status:'Applied',Detail:'EnableScriptBlockLogging = 1'},
+    {Control:'PowerShell transcription',Status:'Applied',Detail:'EnableTranscripting = 1'},
+    {Control:'BitLocker',Status:'WARNING — Not Active',Detail:'Enable with: manage-bde -on C:'},
+    {Control:'Safe DLL search mode',Status:'Applied',Detail:'SafeDllSearchMode = 1'},
+    {Control:'SEHOP',Status:'Applied',Detail:'DisableExceptionChainValidation = 0'},
+    {Control:'Disable AlwaysInstallElevated',Status:'Applied',Detail:'AlwaysInstallElevated = 0'},
+  ];
+  loadData(demo);
+}
+</script>
+</body>
+</html>
